@@ -1,183 +1,140 @@
 let noteTitle;
-let noteText;
-let saveNoteBtn;
-let newNoteBtn;
+let noteBody;
+let save;
+let newNote;
 let noteList;
+let notes;
 
 if (window.location.pathname === '/notes') {
-  noteTitle = document.querySelector('.note-title');
-  noteText = document.querySelector('.note-textarea');
-  saveNoteBtn = document.querySelector('.save-note');
-  newNoteBtn = document.querySelector('.new-note');
-  noteList = document.querySelectorAll('.list-container .list-group');
+  noteTitle = $('.note-title');
+  noteBody = $('.note-textarea');
+  save = $('.save-note');
+  newNote = $('.new-note');
+  noteList = $('.list-container .list-group');
 }
 
-// Show an element
-const show = (elem) => {
-  elem.style.display = 'inline';
-};
-
-// Hide an element
-const hide = (elem) => {
-  elem.style.display = 'none';
-};
+/**
+ * 
+ * WHEN I enter a new note title and the note’s text
+ * THEN a Save icon appears in the navigation at the top of the page
+WHEN I click on the Save icon
+THEN the new note I have entered is saved and appears in the left-hand column with the other existing notes
+WHEN I click on an existing note in the list in the left-hand column
+THEN that note appears in the right-hand column
+WHEN I click on the Write icon in the navigation at the top of the page
+THEN I am presented with empty fields to enter a new note title and the note’s text in the right-hand column 
+*/
 
 // activeNote is used to keep track of the note in the textarea
 let activeNote = {};
+var currentID;
 
-const getNotes = () =>
-  fetch('/api/notes', {
+// api call to retrieve json data on note list from db.json
+const getNotes = () => {
+  return fetch('/api/notes', {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  })
+    .then(data => data.json())
+    .then(data => populateNoteList(data))
+};
 
-const saveNote = (note) =>
+// api call to append new note to list of notes, or update existing note
+const saveNote = () => {
+  activeNote.title = noteTitle.val();
+  activeNote.body = noteBody.val();
+  let note = { 'title': noteTitle.val(), 'body': noteBody.val(), 'id': currentID };
   fetch('/api/notes', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(note),
-  });
+    body: JSON.stringify(note)
+  })
+    .then(init());
+};
 
-const deleteNote = (id) =>
+// api call to delete the specified note form the db.json
+const deleteNote = (id) => {
   fetch(`/api/notes/${id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-    },
-  });
-
-const renderActiveNote = () => {
-  hide(saveNoteBtn);
-
-  if (activeNote.id) {
-    noteTitle.setAttribute('readonly', true);
-    noteText.setAttribute('readonly', true);
-    noteTitle.value = activeNote.title;
-    noteText.value = activeNote.text;
-  } else {
-    noteTitle.removeAttribute('readonly');
-    noteText.removeAttribute('readonly');
-    noteTitle.value = '';
-    noteText.value = '';
-  }
-};
-
-const handleNoteSave = () => {
-  const newNote = {
-    title: noteTitle.value,
-    text: noteText.value,
-  };
-  saveNote(newNote).then(() => {
-    getAndRenderNotes();
-    renderActiveNote();
-  });
-};
-
-// Delete the clicked note
-const handleNoteDelete = (e) => {
-  // Prevents the click listener for the list from being called when the button inside of it is clicked
-  e.stopPropagation();
-
-  const note = e.target;
-  const noteId = JSON.parse(note.parentElement.getAttribute('data-note')).id;
-
-  if (activeNote.id === noteId) {
-    activeNote = {};
-  }
-
-  deleteNote(noteId).then(() => {
-    getAndRenderNotes();
-    renderActiveNote();
-  });
-};
-
-// Sets the activeNote and displays it
-const handleNoteView = (e) => {
-  e.preventDefault();
-  activeNote = JSON.parse(e.target.parentElement.getAttribute('data-note'));
-  renderActiveNote();
-};
-
-// Sets the activeNote to and empty object and allows the user to enter a new note
-const handleNewNoteView = (e) => {
-  activeNote = {};
-  renderActiveNote();
-};
-
-const handleRenderSaveBtn = () => {
-  if (!noteTitle.value.trim() || !noteText.value.trim()) {
-    hide(saveNoteBtn);
-  } else {
-    show(saveNoteBtn);
-  }
-};
-
-// Render the list of note titles
-const renderNoteList = async (notes) => {
-  let jsonNotes = await notes.json();
-  if (window.location.pathname === '/notes') {
-    noteList.forEach((el) => (el.innerHTML = ''));
-  }
-
-  let noteListItems = [];
-
-  // Returns HTML element with or without a delete button
-  const createLi = (text, delBtn = true) => {
-    const liEl = document.createElement('li');
-    liEl.classList.add('list-group-item');
-
-    const spanEl = document.createElement('span');
-    spanEl.classList.add('list-item-title');
-    spanEl.innerText = text;
-    spanEl.addEventListener('click', handleNoteView);
-
-    liEl.append(spanEl);
-
-    if (delBtn) {
-      const delBtnEl = document.createElement('i');
-      delBtnEl.classList.add(
-        'fas',
-        'fa-trash-alt',
-        'float-right',
-        'text-danger',
-        'delete-note'
-      );
-      delBtnEl.addEventListener('click', handleNoteDelete);
-
-      liEl.append(delBtnEl);
     }
-
-    return liEl;
-  };
-
-  if (jsonNotes.length === 0) {
-    noteListItems.push(createLi('No saved Notes', false));
-  }
-
-  jsonNotes.forEach((note) => {
-    const li = createLi(note.title);
-    li.dataset.note = JSON.stringify(note);
-
-    noteListItems.push(li);
   });
+  init();
+};
 
-  if (window.location.pathname === '/notes') {
-    noteListItems.forEach((note) => noteList[0].append(note));
+// updates list column with the notes in db.json
+const populateNoteList = function(storedNotes) {
+  notes = storedNotes;
+  noteList.empty();
+  for (note of storedNotes) {
+    noteList.append(
+      $('<div>').addClass('list-group-item').css('display', 'flex').css('justify-content', 'space-between').append(
+        $('<p>').text(note.title).addClass('list-item-title').data('body', note.body).data('id', note.id)).append(
+          $('<i>').addClass('fas fa-trash-alt float-right text-danger delete-note').data('id', note.id)
+        )
+    );
   }
 };
 
-// Gets notes from the db and renders them to the sidebar
-const getAndRenderNotes = () => getNotes().then(renderNoteList);
+// checks to make sure neither the title or body text input fields are empty before allowing user to save teh note
+const maybeShowSave = () => {
+  activeNote.id = currentID.toString();
+  if (!noteTitle.val().trim() || !noteBody.val().trim()) {
+    save.hide();
+  } else {
+    save.show();
+  }
+};
 
-if (window.location.pathname === '/notes') {
-  saveNoteBtn.addEventListener('click', handleNoteSave);
-  newNoteBtn.addEventListener('click', handleNewNoteView);
-  noteTitle.addEventListener('keyup', handleRenderSaveBtn);
-  noteText.addEventListener('keyup', handleRenderSaveBtn);
-}
+// populates text fields with the selected note info, updates the currentID
+const renderNote = (data) => {
+  // stores selected note info
+  activeNote = { title: data.children(0).text(), body: data.children(0).data('body'), id: data.children(0).data('id') };
+  // only resets active note if a new note is clicked. 
+  // clicking the same note twice does not refresh the active note field because it would delete any unsaved edits made
+  if (currentID != activeNote.id) {
+    currentID = activeNote.id;
+    noteTitle.val(activeNote.title);
+    noteBody.val(activeNote.body);
+  };
+};
 
-getAndRenderNotes();
+// handles rendering a blank template to write notes. Hides the save icon so that empty notes cant be saved to the db
+// and empties the text entry fields. creates a new id for the new note.
+const startNewNote = function () {
+  save.hide();
+  activeNote = [];
+  noteTitle.val('');
+  noteBody.val('');
+  currentID = notes.length.toString();
+};
+
+// on page load:
+// render existing db.json notes to note column
+function init() {
+  getNotes().then(function (data) { startNewNote(); });
+};
+
+// creates new note, empties the activeNote variable and text fields and assigns an ID
+newNote.on('click', startNewNote);
+
+// onclick event handler to display the note data clicked 
+noteList.on('click', '.list-group-item', function () {
+  let data = $(this); // couldn't figure out how to pass $(this) directly into the callback....
+  renderNote(data);
+});
+noteList.on('click', '.delete-note', function () {
+  let id = $(this).data('id');
+  deleteNote(id);
+});
+
+// toggles save button visibility
+noteTitle.on('keyup', maybeShowSave);
+noteBody.on('keyup', maybeShowSave);
+
+save.on('click', saveNote);
+
+
+init();
