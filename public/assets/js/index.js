@@ -3,7 +3,7 @@ let noteBody;
 let save;
 let newNote;
 let noteList;
-let notes;
+let notes = [];
 
 if (window.location.pathname === '/notes') {
   noteTitle = $('.note-title');
@@ -26,7 +26,7 @@ THEN I am presented with empty fields to enter a new note title and the note’s
 */
 
 // activeNote is used to keep track of the note in the textarea
-let activeNote = {};
+let activeNote = {title:'', body:'', id:''};
 var currentID;
 
 // api call to retrieve json data on note list from db.json
@@ -109,6 +109,7 @@ const startNewNote = function () {
   noteTitle.val('');
   noteBody.val('');
   currentID = notes.length.toString();
+  console.log(currentID);
 };
 
 // on page load:

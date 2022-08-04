@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 // const routes = require('./routes');
 
-// const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3001;
 
 // set up express app to handle dataparsing
 app.use(express.json());
@@ -21,10 +21,7 @@ app.get('/notes', (req, res) => {
     res.sendFile(path.join(__dirname, './public/notes.html'))
 });
 
-// Catches all to send to home page
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, './public/index.html'))
-});
+
 
 // creates the bridge to api and serves the db.json when api/notes is entered in url
 app.get('/api/notes', (req, res) => {
@@ -57,7 +54,11 @@ app.delete("/api/notes/:id", function(req, res) {
     
     fs.writeFileSync('./db/db.json', JSON.stringify(savedNotes));
   })
+  
+// Catches all to send to home page
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, './public/index.html'))
+});
 
-
-// app.listen(PORT, () => console.log(`Server is listening to PORT ${PORT}`));
-app.listen('port', process.env.PORT || 3001);
+app.listen(PORT, () => console.log(`Server is listening to PORT ${PORT}`));
+// app.listen('port', process.env.PORT || 3001);
