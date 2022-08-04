@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 // const routes = require('./routes');
 
-const PORT = process.env.PORT;
+// const PORT = process.env.PORT || 3001;
 
 // set up express app to handle dataparsing
 app.use(express.json());
@@ -59,4 +59,5 @@ app.delete("/api/notes/:id", function(req, res) {
   })
 
 
-app.listen(PORT, () => console.log(`Server is listening to PORT ${PORT}`));
+// app.listen(PORT, () => console.log(`Server is listening to PORT ${PORT}`));
+app.listen('port', process.env.PORT || 3001);
