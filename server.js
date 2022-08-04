@@ -4,7 +4,7 @@ const fs = require('fs');
 const app = express();
 // const routes = require('./routes');
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 
 // set up express app to handle dataparsing
 app.use(express.json());
